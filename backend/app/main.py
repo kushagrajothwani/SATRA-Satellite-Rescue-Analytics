@@ -1,40 +1,47 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+"""SATRA FastAPI application.
 
-app = FastAPI(title="SATRA API", version="0.1.0")
+Run from the repository root so the sibling `geospatial` and `agents` packages
+are importable:
 
-# Allow the React app to call this backend
+    cd backend
+    .\\venv\\Scripts\\Activate.ps1
+    uvicorn app.main:app --reload
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# Ensure the repo root (parent of backend/) is importable for `geospatial`/`agents`
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+from app.api import agent_routes, routes  # noqa: E402
+
+app = FastAPI(title="SATRA API", version="0.2.0")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok", "service": "SATRA"}
+app.include_router(routes.router, prefix="/api", tags=["core"])
+app.include_router(agent_routes.router, prefix="/api/agent", tags=["agent"])
 
 
 @app.get("/api/sample-flood")
 def sample_flood():
-    """Sample GeoJSON, clearly labelled as SAMPLE data, not a real analysis."""
-    return {
-        "type": "FeatureCollection",
-        "properties": {"label": "SAMPLE DATA - not a real analysis"},
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {"name": "Sample flood zone"},
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[
-                        [85.35, 28.15], [85.40, 28.15],
-                        [85.40, 28.19], [85.35, 28.19],
-                        [85.35, 28.15],
-                    ]],
-                },
-            }
-        ],
-    }
+    """Backwards-compatible labelled demo layer.
+
+    Prefer POST /api/analysis + GET /api/flood-zones/{id} for real runs.
+    """
+    from geospatial.flood_mapping import change_detection
+
+    geo = change_detection.detect_flood_from_demo()
+    return geo["moderate_confidence"]

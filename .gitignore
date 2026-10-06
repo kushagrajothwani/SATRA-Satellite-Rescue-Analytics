@@ -2,9 +2,17 @@
 .env
 venv/
 node_modules/
+__pycache__/
+*.pyc
+
+# Build output
+frontend/dist/
+frontend/node_modules/
 
 # Data and models (too large for Git)
 sample_data/raw/
+sample_data/runs/
+sample_data/exports/
 ml/datasets/*
 ml/models/*.pt
 *.tif
@@ -13,3 +21,4 @@ ml/models/*.pt
 
 # Keep placeholders
 !ml/datasets/.gitkeep
+!sample_data/.gitkeep
